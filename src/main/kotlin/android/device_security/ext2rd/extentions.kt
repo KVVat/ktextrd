@@ -84,6 +84,18 @@ fun ByteArray.memfill32le(val_: UInt,from:Int,to:Int) {
         this[n+from] = bytes[n and 3]
 }
 
+fun ByteArray.memcpy(from:Int,length:Int):ByteArray {
+    val buf = ByteBuffer.wrap(this,from,length)
+    val ba = ByteArray(buf.remaining())
+    buf.get(ba)
+    return ba
+}
+fun UByteArray.memcpy(from:Int,length:Int):UByteArray {
+    val buf = ByteBuffer.wrap(this.toByteArray(),from,length)
+    val ba = ByteArray(buf.remaining())
+    buf.get(ba)
+    return ba.toUByteArray()
+}
 //------------------------------------
 // String Helpers
 //------------------------------------

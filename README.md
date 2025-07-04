@@ -100,5 +100,6 @@ Override an inode number of the root directory of the image. (Default number = 2
  - Dump all files in image
  - Maven repository settings
  - Add useful tool for factory/ota image analysis
-   - super.img
+   - super.img (sparse archive)
+   - payload.bin support
  - Refactoring

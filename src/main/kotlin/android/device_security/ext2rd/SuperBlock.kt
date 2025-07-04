@@ -98,6 +98,9 @@ class SuperBlock {
         s_def_resgid = b.get16le(p); p += 2;    // 0052;
 
         // The below is present only if (`HasExtended()` == true).
+        /* These fields are for EXT2_DYNAMIC_REV superblocks only. */
+        /* Note: the difference between "good old" and dynamic rev is that dynamic */
+        /*       revs have variable inode sizes and a few other features. */
         s_first_ino = b.get32le(p); p += 4;    // 0054;
         s_inode_size = b.get16le(p); p += 2;    // 0058;
         s_block_group_nr = b.get16le(p); p += 2;    // 005a;
@@ -110,19 +113,29 @@ class SuperBlock {
         s_algo_bitmap = b.get32le(p); p += 4 //00CB
 
         //behaviour important flags
-        flex_bg_support = ((s_feature_incompat.toInt() and Constants.EXT4_FEATURE_INCOMPAT_FLEX_BG) != 0)
-        bit64_support   = ((s_feature_incompat.toInt() and Constants.EXT4_FEATURE_INCOMPAT_64BIT) != 0)
+        flex_bg_support = (s_feature_incompat and Constants.EXT4_FEATURE_INCOMPAT_FLEX_BG) != 0u
+        bit64_support   = (s_feature_incompat and Constants.EXT4_FEATURE_INCOMPAT_64BIT) != 0u
 
         //println("flex bg!->"+flex_bg_support);
         //println("64bit support!->"+bit64_support);
-
+        /*
+         * Performance hints.  Directory preallocation should only
+         * happen if the EXT2_COMPAT_PREALLOC flag is on.
+         */
         if(bit64_support) {
-            //println("sum'o p="+p+","+p.toHexString(HexFormat.Default))
-            //EXT4_FEATURE_COMPAT_DIR_PREALLOC
+            /*
+             * Performance hints.  Directory preallocation should only
+             * happen if the EXT2_COMPAT_PREALLOC flag is on.
+             */
             s_prealloc_blocks = b.get8(p);p += 1
             s_prealloc_dir_blocks = b.get8(p);p += 1
             s_reserved_gdt_blocks = b.get16le(p);p += 2
             //EXT4_FEATURE_COMAPT_HAS_JOURNAL
+            /*
+    　　　　　　* Journaling support valid if EXT3_FEATURE_COMPAT_HAS_JOURNAL set.
+    　　　　　*/
+
+
             s_jounal_uuid = b.copyOfRange(p, p + 16);p += 16
             s_journal_inum = b.get32le(p);p += 4
             s_journal_dev = b.get32le(p);p += 4
@@ -374,31 +387,31 @@ class SuperBlock {
     }
 
     companion object {
-        fun f_compat2str(ff: UInt): String {
+        fun f_compat2str(f: UInt): String {
             val l = mutableListOf<String>()
-            val f = ff.toInt()
-            val all = Constants.EXT4_FEATURE_COMPAT_DIR_PREALLOC or
+            //val f = ff.toInt()
+            val all:UInt = Constants.EXT4_FEATURE_COMPAT_DIR_PREALLOC or
                     Constants.EXT4_FEATURE_COMPAT_IMAGIC_INODES or
                     Constants.EXT4_FEATURE_COMPAT_HAS_JOURNAL or
                     Constants.EXT4_FEATURE_COMPAT_EXT_ATTR or
                     Constants.EXT4_FEATURE_COMPAT_RESIZE_INODE or
                     Constants.EXT4_FEATURE_COMPAT_DIR_INDEX
 
-            if (f and Constants.EXT4_FEATURE_COMPAT_DIR_PREALLOC != 0) l.add("DIR_PREALLOC")
-            if (f and Constants.EXT4_FEATURE_COMPAT_IMAGIC_INODES != 0) l.add("IMAGIC_INODES")
-            if (f and Constants.EXT4_FEATURE_COMPAT_HAS_JOURNAL != 0) l.add("HAS_JOURNAL")
-            if (f and Constants.EXT4_FEATURE_COMPAT_EXT_ATTR != 0) l.add("EXT_ATTR")
-            if (f and Constants.EXT4_FEATURE_COMPAT_RESIZE_INODE != 0) l.add("RESIZE_INODE")
-            if (f and Constants.EXT4_FEATURE_COMPAT_DIR_INDEX != 0) l.add("DIR_INDEX")
-            if ((f and all.inv()) != 0) l.add(String.format("unk_%x", f and all.inv()))
+            if (f and Constants.EXT4_FEATURE_COMPAT_DIR_PREALLOC != 0u) l.add("DIR_PREALLOC")
+            if (f and Constants.EXT4_FEATURE_COMPAT_IMAGIC_INODES != 0u) l.add("IMAGIC_INODES")
+            if (f and Constants.EXT4_FEATURE_COMPAT_HAS_JOURNAL != 0u) l.add("HAS_JOURNAL")
+            if (f and Constants.EXT4_FEATURE_COMPAT_EXT_ATTR != 0u) l.add("EXT_ATTR")
+            if (f and Constants.EXT4_FEATURE_COMPAT_RESIZE_INODE != 0u) l.add("RESIZE_INODE")
+            if (f and Constants.EXT4_FEATURE_COMPAT_DIR_INDEX != 0u) l.add("DIR_INDEX")
+            if ((f and all.inv()) != 0u) l.add(String.format("unk_%x", f and all.inv()))
 
             return l.joinToString (",")
         }
 
-        fun f_incompat2str(ff: UInt): String {
+        fun f_incompat2str(f: UInt): String {
             val l = mutableListOf<String>()
-            val f = ff.toInt()
-            val all = Constants.EXT4_FEATURE_INCOMPAT_COMPRESSION or
+            //val f = ff;//.toInt()
+            val all:UInt = Constants.EXT4_FEATURE_INCOMPAT_COMPRESSION or
                     Constants.EXT4_FEATURE_INCOMPAT_FILETYPE or
                     Constants.EXT4_FEATURE_INCOMPAT_RECOVER or
                     Constants.EXT4_FEATURE_INCOMPAT_JOURNAL_DEV or
@@ -413,29 +426,29 @@ class SuperBlock {
                     Constants.EXT4_FEATURE_INCOMPAT_LARGEDIR or
                     Constants.EXT4_FEATURE_INCOMPAT_INLINE_DATA
             
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_COMPRESSION != 0) l.add("COMPRESSION")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_FILETYPE != 0) l.add("FILETYPE")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_RECOVER != 0) l.add("RECOVER")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_JOURNAL_DEV != 0) l.add("JOURNAL_DEV")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_META_BG != 0) l.add("META_BG")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_EXTENTS != 0) l.add("EXTENTS")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_64BIT != 0) l.add("64BIT")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_MMP != 0) l.add("MMP")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_FLEX_BG != 0) l.add("FLEX_BG")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_EA_INODE != 0) l.add("EA_INODE")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_DIRDATA != 0) l.add("DIRDATA")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_BG_USE_META_CSUM != 0) l.add("BG_USE_META_CSUM")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_LARGEDIR != 0) l.add("LARGEDIR")
-            if (f and Constants.EXT4_FEATURE_INCOMPAT_INLINE_DATA != 0) l.add("INLINE_DATA")
-            if ((f and all.inv()) != 0) l.add(String.format("unk_%x", f and all.inv()))
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_COMPRESSION != 0u) l.add("COMPRESSION")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_FILETYPE != 0u) l.add("FILETYPE")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_RECOVER != 0u) l.add("RECOVER")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_JOURNAL_DEV != 0u) l.add("JOURNAL_DEV")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_META_BG != 0u) l.add("META_BG")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_EXTENTS != 0u) l.add("EXTENTS")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_64BIT != 0u) l.add("64BIT")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_MMP != 0u) l.add("MMP")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_FLEX_BG != 0u) l.add("FLEX_BG")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_EA_INODE != 0u) l.add("EA_INODE")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_DIRDATA != 0u) l.add("DIRDATA")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_BG_USE_META_CSUM != 0u) l.add("BG_USE_META_CSUM")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_LARGEDIR != 0u) l.add("LARGEDIR")
+            if (f and Constants.EXT4_FEATURE_INCOMPAT_INLINE_DATA != 0u) l.add("INLINE_DATA")
+            if ((f and all.inv()) != 0u) l.add(String.format("unk_%x", f and all.inv()))
 
             return l.joinToString (",")
         }
 
-        fun f_rocompat2str(ff: UInt): String {
+        fun f_rocompat2str(f: UInt): String {
             val l = mutableListOf<String>()
-            val f = ff.toInt()
-            val all = Constants.EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER or
+            //val f = ff.toInt()
+            val all:UInt = Constants.EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER or
                     Constants.EXT4_FEATURE_RO_COMPAT_LARGE_FILE or
                     Constants.EXT4_FEATURE_RO_COMPAT_BTREE_DIR or
                     Constants.EXT4_FEATURE_RO_COMPAT_HUGE_FILE or
@@ -446,17 +459,17 @@ class SuperBlock {
                     Constants.EXT4_FEATURE_RO_COMPAT_BIGALLOC or
                     Constants.EXT4_FEATURE_RO_COMPAT_METADATA_CSUM
 
-            if (f and Constants.EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER != 0) l.add("SPARSE_SUPER")
-            if (f and Constants.EXT4_FEATURE_RO_COMPAT_LARGE_FILE != 0) l.add("LARGE_FILE")
-            if (f and Constants.EXT4_FEATURE_RO_COMPAT_BTREE_DIR != 0) l.add("BTREE_DIR")
-            if (f and Constants.EXT4_FEATURE_RO_COMPAT_HUGE_FILE != 0) l.add("HUGE_FILE")
-            if (f and Constants.EXT4_FEATURE_RO_COMPAT_GDT_CSUM != 0) l.add("GDT_CSUM")
-            if (f and Constants.EXT4_FEATURE_RO_COMPAT_DIR_NLINK != 0) l.add("DIR_NLINK")
-            if (f and Constants.EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE != 0) l.add("EXTRA_ISIZE")
-            if (f and Constants.EXT4_FEATURE_RO_COMPAT_QUOTA != 0) l.add("QUOTA")
-            if (f and Constants.EXT4_FEATURE_RO_COMPAT_BIGALLOC != 0) l.add("BIGALLOC")
-            if (f and Constants.EXT4_FEATURE_RO_COMPAT_METADATA_CSUM != 0) l.add("METADATA_CSUM")
-            if ((f and all.inv()) != 0) l.add(String.format("unk_%x", f and all.inv()))
+            if (f and Constants.EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER != 0u) l.add("SPARSE_SUPER")
+            if (f and Constants.EXT4_FEATURE_RO_COMPAT_LARGE_FILE != 0u) l.add("LARGE_FILE")
+            if (f and Constants.EXT4_FEATURE_RO_COMPAT_BTREE_DIR != 0u) l.add("BTREE_DIR")
+            if (f and Constants.EXT4_FEATURE_RO_COMPAT_HUGE_FILE != 0u) l.add("HUGE_FILE")
+            if (f and Constants.EXT4_FEATURE_RO_COMPAT_GDT_CSUM != 0u) l.add("GDT_CSUM")
+            if (f and Constants.EXT4_FEATURE_RO_COMPAT_DIR_NLINK != 0u) l.add("DIR_NLINK")
+            if (f and Constants.EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE != 0u) l.add("EXTRA_ISIZE")
+            if (f and Constants.EXT4_FEATURE_RO_COMPAT_QUOTA != 0u) l.add("QUOTA")
+            if (f and Constants.EXT4_FEATURE_RO_COMPAT_BIGALLOC != 0u) l.add("BIGALLOC")
+            if (f and Constants.EXT4_FEATURE_RO_COMPAT_METADATA_CSUM != 0u) l.add("METADATA_CSUM")
+            if ((f and all.inv()) != 0u) l.add(String.format("unk_%x", f and all.inv()))
 
             return  l.joinToString (",")
         }

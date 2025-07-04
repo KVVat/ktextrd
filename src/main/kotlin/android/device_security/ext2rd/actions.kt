@@ -374,6 +374,23 @@ class dumpfs: action {
     }
 }
 
+class checkformat: action {
+    override fun perform(fs: Ext2FileSystem) {
+
+        println("FileType:"+fs.fileSystemType)
+        if(fs.fileSystemType == ImageType.EXT2
+            || fs.fileSystemType == ImageType.EXT3
+            || fs.fileSystemType == ImageType.EXT4){
+            fs.superblk.dump()
+        } else if(fs.fileSystemType == ImageType.UNKNOWN){
+            println("checkformat: not an ext2 fs")
+
+            //fs.dump()
+        }
+        //Count Files , Check File Format?
+    }
+}
+
 class dumpblocks(val first:UInt,val last:UInt): action {
     override fun perform(fs: Ext2FileSystem) {
         try {

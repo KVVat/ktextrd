@@ -29,12 +29,23 @@ class Ext2FileSystem {
     var sb_offset: ULong = 0u
     var rootdir_in: ULong = 0u
 
+    /**
+     * Holds the determined filesystem type after parsing.
+     * It is private set, so it can only be modified within this class.
+     */
+    var fileSystemType: ImageType = ImageType.UNKNOWN
+        private set
+
+
     fun parse(fp: IReadWriter) {
         fp.seek(this.sb_offset.toLong())
         superblk.parse(fp)
-        if(superblk.s_magic.toUInt() != 0xef53u)
-            throw RuntimeException("not an ext2 fs")
+        determineFileSystemType()
         //println(fp._off)
+        if(superblk.s_magic.toUInt() != 0xef53u) {
+            //throw RuntimeException("not an ext2 fs")
+            return;
+        }
         parseGroupDescs(fp)
         //println(fp._off)
         //Block Groups : contains inode
@@ -53,6 +64,40 @@ class Ext2FileSystem {
             }
         }
     }
+
+    /**
+     * Determines the filesystem type based on the superblock's feature flags.
+     * This method is intended to be called after the superblock has been parsed.
+     */
+    private fun determineFileSystemType() {
+        // SuperBlockのインスタンス (this.superblk) を使用して判別
+        val sb = this.superblk
+
+        // First, check the magic number as a basic prerequisite.
+        if (sb.s_magic.toUInt() != Constants.EXT2_SUPER_MAGIC) {
+            this.fileSystemType = ImageType.UNKNOWN
+            return
+        }
+
+        // 1. Determine if it's EXT4 by checking incompatible features first.
+        if ((sb.s_feature_incompat and Constants.EXT4_FEATURE_INCOMPAT_EXTENTS) != 0u ||
+            (sb.s_feature_incompat and Constants.EXT4_FEATURE_INCOMPAT_64BIT) != 0u ||
+            (sb.s_feature_incompat and Constants.EXT4_FEATURE_INCOMPAT_FLEX_BG) != 0u ||
+            (sb.s_feature_incompat and Constants.EXT4_FEATURE_INCOMPAT_FILETYPE) != 0u) {
+            this.fileSystemType = ImageType.EXT4
+            return
+        }
+
+        // 2. If not clearly EXT4, check for journaling to identify EXT3.
+        if ((sb.s_feature_compat and Constants.EXT3_FEATURE_COMPAT_HAS_JOURNAL) != 0u) {
+            this.fileSystemType = ImageType.EXT3
+            return
+        }
+
+        // 3. If none of the above, it's considered EXT2.
+        this.fileSystemType = ImageType.EXT2
+    }
+
 
     fun parseGroupDescs(fp: IReadWriter) {
         var bgdescopos:ULong

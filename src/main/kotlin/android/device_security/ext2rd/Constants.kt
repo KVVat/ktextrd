@@ -18,6 +18,10 @@ package android.device_security.ext2rd
 
 class Constants {
     companion object {
+
+        const val EXT2_SUPER_MAGIC = 0xEF53u
+        const val EXT3_FEATURE_COMPAT_HAS_JOURNAL = 0x0004u
+
         const val ROOTDIRINODE=2
         // see linux/include/uapi/linux/stat.h
         const val EXT4_S_IFIFO = 0x1000
@@ -67,45 +71,45 @@ class Constants {
         const val EXT4_INLINE_DATA_FL = 0x10000000u /* Inode has inline data. */
         const val EXT4_RESERVED_FL = 0x80000000u /* reserved for ext4 lib */
 
-        const val EXT4_FEATURE_COMPAT_DIR_PREALLOC = 0x0001 /* Directory preallocation */
-        const val EXT4_FEATURE_COMPAT_IMAGIC_INODES = 0x0002 /* Inodes with imagic filesystem IDs */
-        const val EXT4_FEATURE_COMPAT_HAS_JOURNAL = 0x0004 /* Journaling support enabled */
-        const val EXT4_FEATURE_COMPAT_EXT_ATTR = 0x0008 /* Extended attribute support enabled */
-        const val EXT4_FEATURE_COMPAT_RESIZE_INODE = 0x0010 /* Inode size can be resized */
-        const val EXT4_FEATURE_COMPAT_DIR_INDEX = 0x0020 /* Indexed directories */
+        const val EXT4_FEATURE_COMPAT_DIR_PREALLOC = 0x0001u /* Directory preallocation */
+        const val EXT4_FEATURE_COMPAT_IMAGIC_INODES = 0x0002u /* Inodes with imagic filesystem IDs */
+        const val EXT4_FEATURE_COMPAT_HAS_JOURNAL = 0x0004u /* Journaling support enabled */
+        const val EXT4_FEATURE_COMPAT_EXT_ATTR = 0x0008u /* Extended attribute support enabled */
+        const val EXT4_FEATURE_COMPAT_RESIZE_INODE = 0x0010u /* Inode size can be resized */
+        const val EXT4_FEATURE_COMPAT_DIR_INDEX = 0x0020u /* Indexed directories */
 
         // Read-only compatible feature constants
-        const val EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER = 0x0001 /* Sparse superblocks */
-        const val EXT4_FEATURE_RO_COMPAT_LARGE_FILE = 0x0002 /* Large files support */
-        const val EXT4_FEATURE_RO_COMPAT_BTREE_DIR = 0x0004 /* B-tree directories */
-        const val EXT4_FEATURE_RO_COMPAT_HUGE_FILE = 0x0008 /* Huge files support */
-        const val EXT4_FEATURE_RO_COMPAT_GDT_CSUM = 0x0010 /* Group descriptor checksums */
-        const val EXT4_FEATURE_RO_COMPAT_DIR_NLINK = 0x0020 /* Directories have nlinks counts */
-        const val EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE = 0x0040 /* Extra inode size */
-        const val EXT4_FEATURE_RO_COMPAT_QUOTA = 0x0100 /* Quota support */
-        const val EXT4_FEATURE_RO_COMPAT_BIGALLOC = 0x0200 /* Bigalloc support */
+        const val EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER = 0x0001u /* Sparse superblocks */
+        const val EXT4_FEATURE_RO_COMPAT_LARGE_FILE = 0x0002u /* Large files support */
+        const val EXT4_FEATURE_RO_COMPAT_BTREE_DIR = 0x0004u /* B-tree directories */
+        const val EXT4_FEATURE_RO_COMPAT_HUGE_FILE = 0x0008u /* Huge files support */
+        const val EXT4_FEATURE_RO_COMPAT_GDT_CSUM = 0x0010u /* Group descriptor checksums */
+        const val EXT4_FEATURE_RO_COMPAT_DIR_NLINK = 0x0020u /* Directories have nlinks counts */
+        const val EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE = 0x0040u /* Extra inode size */
+        const val EXT4_FEATURE_RO_COMPAT_QUOTA = 0x0100u /* Quota support */
+        const val EXT4_FEATURE_RO_COMPAT_BIGALLOC = 0x0200u /* Bigalloc support */
         /*
          * METADATA_CSUM also enables group descriptor checksums (GDT_CSUM).  When
          * METADATA_CSUM is set, group descriptor checksums use the same algorithm as
          * all other data structures' checksums.  However, the METADATA_CSUM and
          * GDT_CSUM bits are mutually exclusive.
         */
-        const val EXT4_FEATURE_RO_COMPAT_METADATA_CSUM = 0x0400 /* Metadata checksums */
+        const val EXT4_FEATURE_RO_COMPAT_METADATA_CSUM = 0x0400u /* Metadata checksums */
 
         // Incompatible feature constants
-        const val EXT4_FEATURE_INCOMPAT_COMPRESSION = 0x0001 /* Compression support */
-        const val EXT4_FEATURE_INCOMPAT_FILETYPE = 0x0002 /* Filetype support */
-        const val EXT4_FEATURE_INCOMPAT_RECOVER = 0x0004 /* Recover support */
-        const val EXT4_FEATURE_INCOMPAT_JOURNAL_DEV = 0x0008 /* Journal device */
-        const val EXT4_FEATURE_INCOMPAT_META_BG = 0x0010 /* Metadata bitmaps in group descriptors */
-        const val EXT4_FEATURE_INCOMPAT_EXTENTS = 0x0040 /* Extents support */
-        const val EXT4_FEATURE_INCOMPAT_64BIT = 0x0080 /* 64-bit support */
-        const val EXT4_FEATURE_INCOMPAT_MMP = 0x0100 /* Multiple mount protection */
-        const val EXT4_FEATURE_INCOMPAT_FLEX_BG = 0x0200 /* Flexible block groups */
-        const val EXT4_FEATURE_INCOMPAT_EA_INODE = 0x0400 /* Extended attributes in inode */
-        const val EXT4_FEATURE_INCOMPAT_DIRDATA = 0x1000 /* Inline directory data */
-        const val EXT4_FEATURE_INCOMPAT_BG_USE_META_CSUM = 0x2000 /* Block group checksums use metadata_csum */
-        const val EXT4_FEATURE_INCOMPAT_LARGEDIR = 0x4000 /* Large directories support */
-        const val EXT4_FEATURE_INCOMPAT_INLINE_DATA = 0x8000 /* Inline data support */
+        const val EXT4_FEATURE_INCOMPAT_COMPRESSION = 0x0001u /* Compression support */
+        const val EXT4_FEATURE_INCOMPAT_FILETYPE = 0x0002u /* Filetype support */
+        const val EXT4_FEATURE_INCOMPAT_RECOVER = 0x0004u /* Recover support */
+        const val EXT4_FEATURE_INCOMPAT_JOURNAL_DEV = 0x0008u /* Journal device */
+        const val EXT4_FEATURE_INCOMPAT_META_BG = 0x0010u /* Metadata bitmaps in group descriptors */
+        const val EXT4_FEATURE_INCOMPAT_EXTENTS = 0x0040u /* Extents support */
+        const val EXT4_FEATURE_INCOMPAT_64BIT = 0x0080u /* 64-bit support */
+        const val EXT4_FEATURE_INCOMPAT_MMP = 0x0100u /* Multiple mount protection */
+        const val EXT4_FEATURE_INCOMPAT_FLEX_BG = 0x0200u /* Flexible block groups */
+        const val EXT4_FEATURE_INCOMPAT_EA_INODE = 0x0400u /* Extended attributes in inode */
+        const val EXT4_FEATURE_INCOMPAT_DIRDATA = 0x1000u /* Inline directory data */
+        const val EXT4_FEATURE_INCOMPAT_BG_USE_META_CSUM = 0x2000u /* Block group checksums use metadata_csum */
+        const val EXT4_FEATURE_INCOMPAT_LARGEDIR = 0x4000u /* Large directories support */
+        const val EXT4_FEATURE_INCOMPAT_INLINE_DATA = 0x8000u /* Inline data support */
     }
 }

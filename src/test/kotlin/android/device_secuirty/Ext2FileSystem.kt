@@ -22,7 +22,7 @@ class Ext2FileSystemTest {
 
     @Test
     fun testMain(){
-        //main(arrayOf<String>("testfiles/ext2img.img","-f"))
+        main(arrayOf<String>("testfiles/ext2img.img","-f"))
         //main(arrayOf<String>("testfiles/ext2img.img","-v"))
         //main(arrayOf<String>("testfiles/ext2img.img","-d"))
         //main(arrayOf<String>("testfiles/ext2img.img","-fd","/usr/src/linux/fs/msdos/Makefile"))
@@ -33,12 +33,12 @@ class Ext2FileSystemTest {
         //main(arrayOf<String>("testfiles/ext2img.img","-wd","*/inode.c"))
         //main(arrayOf<String>("testfiles/ext2img.img","-wx","*/inode.c:./dist/"))
         //main(arrayOf<String>("testfiles/ext2img.img","-wxf","*/*.c:dist/"))
-        main(arrayOf<String>("testfiles/ext2img.ext4","-b","12000-12100"))
+        //main(arrayOf<String>("testfiles/ext2img.img","-b","12000-12100"))
     }
 
     @Test
     fun testRawReader() {
-        val uri = Paths.get( "testfiles", "ext2img.img").toUri()
+        val uri = Paths.get( "testfiles", "ext2fs2.img").toUri()
         //https://github.com/munjeni/super_image_dumper - super img
         val r = RandomAccessFile(File(uri.path),"rw")
 

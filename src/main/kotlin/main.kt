@@ -1,5 +1,6 @@
 import android.device_security.ext2rd.Constants
 import android.device_security.ext2rd.Ext2FileSystem
+import android.device_security.ext2rd.ImageType
 import android.device_security.ext2rd.action
 import android.device_security.ext2rd.dumpblocks
 import android.device_security.ext2rd.dumpfs
@@ -8,6 +9,8 @@ import android.device_security.ext2rd.exportinode
 import android.device_security.ext2rd.hexdumpfile
 import android.device_security.ext2rd.hexdumpinode
 import android.device_security.ext2rd.listfiles
+import android.device_security.ext2rd.checkformat
+import android.device_security.ext2rd.logicalpartition.LogicalPartition
 import android.device_security.ext2rd.reader.IReadWriter
 import android.device_security.ext2rd.reader.RandomAccessReader
 import android.device_security.ext2rd.reader.SparseReader
@@ -19,7 +22,7 @@ import java.io.RandomAccessFile
 import java.nio.file.Path
 
 fun usage(){
-  println("Usage: droext4rd [-l] [-v] <fsname> [exports...]");
+  println("Usage: ktextrd [-l] [-v] <fsname> [exports...]");
   println("     -l lists all files");
   println("     -v verbosely lists all files");
   //println("     -B       open as block device");
@@ -63,7 +66,7 @@ fun main(args : Array<String>) {
   val actions = mutableListOf<action>()
   val offsets = mutableListOf<ULong>()
 
-  var fsfile = ""
+  var targetFile = ""
   var sb_offset: ULong = 0x400u
   var rootdir_in: Int = Constants.ROOTDIRINODE
   //arg parsing
@@ -72,7 +75,7 @@ fun main(args : Array<String>) {
   while(i<args.size){
     val arg = args[i]
     if(arg.startsWith("-")){
-      //println("here")
+
       when(arg[1]) {
         'l' -> actions.add(listfiles())
         'v' -> actions.add(verboselistfiles())
@@ -83,57 +86,65 @@ fun main(args : Array<String>) {
         }
         //[f]ile the command handles single path
         'f' -> {
-          //dump inode or path in stdout
-          //-fd #10
-          //-fd /usr/local/test.txt
-          when(arg[2]) {
-            'd' -> {
-              getstrarg(args,++i).let{
-                if(it[0]=='#'){
-                  val num = it.substring(1).toUInt()
-                  println("dump inode $num")
-                  actions.add(hexdumpinode(num))
-                } else {
-                  println("dump a file $it")
-                  actions.add(hexdumpfile(it))
-                }
-              }
-            }
-            'x' -> {
-              //extract indode or path// read next arg
-              //-fx #10:/path_to_out/, #10:file_to_extract
-              //-fx /file/to/extract:/path/to/
-              getstrarg(args,++i).split(":").let{
-                if(it.size>0 && it.size<=2 ) {
-                  var outpath:String
-                  if(it[0][0]=='#'){
-                    val num = it[0].substring(1).toUInt()
-                    println("export inode $num")
-                    if(it.size == 2){
-                      outpath = it[1]
-                    } else {
-                      outpath = "inode_${it[0]}"
-                    }
-                    actions.add(exportinode(num,outpath))
+          if(arg.length==3){
+            //dump inode or path in stdout
+            //-fd #10
+            //-fd /usr/local/test.txt
+            when(arg[2]) {
+              'd' -> {
+                getstrarg(args, ++i).let {
+                  if (it[0] == '#') {
+                    val num = it.substring(1).toUInt()
+                    println("dump inode $num")
+                    actions.add(hexdumpinode(num))
                   } else {
-                    println("dump a file ${it[0]}")
-                    if(it.size == 2){
-                      outpath = it[1]
-                    } else {
-                      outpath = Path.of(it[0]).fileName.toString()
-                    }
-                    actions.add(exportfile(it[0],outpath))
+                    println("dump a file $it")
+                    actions.add(hexdumpfile(it))
                   }
-                } else {
-                  println("invalid parameter format")
                 }
               }
+
+              'x' -> {
+                //extract indode or path// read next arg
+                //-fx #10:/path_to_out/, #10:file_to_extract
+                //-fx /file/to/extract:/path/to/
+                getstrarg(args, ++i).split(":").let {
+                  if (it.size > 0 && it.size <= 2) {
+                    var outpath: String
+                    if (it[0][0] == '#') {
+                      val num = it[0].substring(1).toUInt()
+                      println("export inode $num")
+                      if (it.size == 2) {
+                        outpath = it[1]
+                      } else {
+                        outpath = "inode_${it[0]}"
+                      }
+                      actions.add(exportinode(num, outpath))
+                    } else {
+                      println("dump a file ${it[0]}")
+                      if (it.size == 2) {
+                        outpath = it[1]
+                      } else {
+                        outpath = Path.of(it[0]).fileName.toString()
+                      }
+                      actions.add(exportfile(it[0], outpath))
+                    }
+                  } else {
+                    println("invalid parameter format")
+                  }
+                }
+              }
+              else -> {
+                usage()
+                return
+              }
             }
-            else -> {
-              usage()
-              return
-            }
+          } else {
+            println("invalid parameter")
+            usage()
+            return
           }
+
         }
         'w' -> {
           //search files with [w]ild card in image then extract them, those that match the pattern
@@ -176,10 +187,6 @@ fun main(args : Array<String>) {
                   }
                 }
               }
-//              'w' -> {
-//                //extract whole images
-//                //-wi /path_to_out/
-//              }
               else -> {
                 usage()
                 return
@@ -237,28 +244,32 @@ fun main(args : Array<String>) {
         }
       }
 
-    } else if(fsfile == "") {
-      fsfile = arg
+    } else if(targetFile == "") {
+      targetFile = arg
     }
     i++
   }
-  if(fsfile == "" || !File(fsfile).exists()){
+  if(targetFile == "" || !File(targetFile).exists()){
     println("File not found")
     usage()
     return
+  } else if(File(targetFile).exists() && args.size==1){
+    println("No action specified. Lemme check the file format of image")
+    actions.add(checkformat())
+    //usage()
+    //return
   }
   if (offsets.size>0) {
     //r= std::make_shared<OffsetReader>(r, offsets.front(), r->size()-offsets.front());
     //offsets.pop_front();
   }
 
-  val r = RandomAccessFile(File(fsfile),"rw")
+  val r = RandomAccessFile(File(targetFile),"rw")
   val ext2 = Ext2FileSystem()
 
   val rr: IReadWriter
   if(SparseReader.issparse(r)){
     rr = SparseReader(r)
-    //println("[sparse image]");
   } else {
     rr = RandomAccessReader(r)
   }
@@ -268,7 +279,20 @@ fun main(args : Array<String>) {
   //
   ext2.parse(rr)
   //
-  actions.forEach{
-    it.perform(ext2)
+  if(ext2.fileSystemType == ImageType.EXT2
+    || ext2.fileSystemType == ImageType.EXT3
+    || ext2.fileSystemType == ImageType.EXT4){
+    actions.forEach {
+      it.perform(ext2)
+    }
+  } else {
+    //Logical Partition used for super.img
+    //We can dump it or expand it with this tool
+    val lpp =LogicalPartition()
+    if(lpp.isValid(rr)) {
+      lpp.parse(rr)
+    } else {
+      println("The file format is not supported")
+    }
   }
 }
