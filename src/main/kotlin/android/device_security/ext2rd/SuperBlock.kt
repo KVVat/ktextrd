@@ -445,6 +445,7 @@ class SuperBlock {
             return l.joinToString (",")
         }
 
+        @OptIn(ExperimentalStdlibApi::class)
         fun f_rocompat2str(f: UInt): String {
             val l = mutableListOf<String>()
             //val f = ff.toInt()
@@ -469,7 +470,8 @@ class SuperBlock {
             if (f and Constants.EXT4_FEATURE_RO_COMPAT_QUOTA != 0u) l.add("QUOTA")
             if (f and Constants.EXT4_FEATURE_RO_COMPAT_BIGALLOC != 0u) l.add("BIGALLOC")
             if (f and Constants.EXT4_FEATURE_RO_COMPAT_METADATA_CSUM != 0u) l.add("METADATA_CSUM")
-            if ((f and all.inv()) != 0u) l.add(String.format("unk_%x", f and all.inv()))
+            if ((f and all.inv()) != 0u) l.add("unknown flag:"+ (f and all.inv()).toHexString(HexFormat.Default))
+            //l.add(String.format("unk_%x", f and all.inv()))
 
             return  l.joinToString (",")
         }

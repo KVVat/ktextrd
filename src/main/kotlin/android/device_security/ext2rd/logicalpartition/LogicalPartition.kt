@@ -1,10 +1,14 @@
 package android.device_security.ext2rd.logicalpartition
 
+import android.device_security.ext2rd.exportinode
 import android.device_security.ext2rd.get64le
 import android.device_security.ext2rd.memcpy
+import android.device_security.ext2rd.prepareOutfile
 import android.device_security.ext2rd.reader.IReadWriter
 import android.device_security.ext2rd.toHex
+import java.io.FileOutputStream
 import java.nio.ByteBuffer
+import java.nio.file.Paths
 
 const val LP_PARTITION_RESERVED_BYTES = 4096L
 //https://github.com/munjeni/super_image_dumper/blob/master/superunpack.c
@@ -54,32 +58,16 @@ class LogicalPartition {
         var format = PartitionFormat.BIN
         val checkBytes = buf.memcpy(0,4)
         val checkBytes4Ext4 =buf.memcpy(0x438,2)
-        //ByteBuffer.wrap(buf,0,4)
-        //val test = ByteArray(checkBytes_.remaining())
 
         if(checkBytes.memcmp(byteArrayOf(0x7f,0x45,0x4c,0x46))){
-            return Pair(name+".ELF",PartitionFormat.ELF);
+            return Pair(name+".elf",PartitionFormat.ELF);
         } else if(checkBytes4Ext4.memcmp(byteArrayOf(0x53, 0xEF.toByte()) ) ){
-            return Pair(name+".EXT4",PartitionFormat.EXT4);
+            return Pair(name+".ext4",PartitionFormat.EXT4);
+        } else  if(checkBytes.memcmp(byteArrayOf(0xeb.toByte(),0x3C,0x90.toByte()))){
+            return Pair(name+".vfat",PartitionFormat.VFAT);
+        } else  if(checkBytes.memcmp(byteArrayOf(0x41,0x4e,0x44,0x52))){
+            return Pair(name+".img",PartitionFormat.IMG);
         }
-        println(checkBytes.toHex());
-        println(checkBytes4Ext4.toHex());
-        /*
-        else if (memcmp(temp, "\xeb\x3c\x90", 3) == 0)
-        {
-            printf("      Filetype VFAT.\n");
-            snprintf(outname, 64, "%s.vfat", partition.name);
-        }
-        else if (memcmp(temp, "\x41\x4e\x44\x52", 4) == 0)
-        {
-            printf("      Filetype IMG.\n");
-            snprintf(outname, 64, "%s.img", partition.name);
-        }
-        else
-        {
-            printf("      Filetype BIN.\n");
-            snprintf(outname, 64, "%s.bin", partition.name);
-        }*/
 
         return Pair(fileName,format)
     }
@@ -104,7 +92,7 @@ class LogicalPartition {
             0u
         }
 
-        if(mode==Mode.DUMP) println("\nPartitions = $usedPartitions used, $notUsedPartitions not used, total $totalPartitions\n")
+        if(mode==Mode.DUMP) println("Partitions = $usedPartitions used, $notUsedPartitions not used, total $totalPartitions\n")
 
         val numPartitionEntries = lpMetaDataHeader.partitions.numEntries.toInt()
         if (numPartitionEntries > 0) {
@@ -135,7 +123,7 @@ class LogicalPartition {
                     fp.read(temp,TEMP_SIZE.toLong())
                     val nameAndType = testPartitionEntry(temp,partitionEntry.name)
                     //if(mode == Mode.DUMP)
-                    println("Existing Partition:"+nameAndType.first)
+                    println("\nExisting Partition:"+nameAndType.first)
                     var ext4FileSize = 0UL
 
                     if(nameAndType.second == PartitionFormat.EXT4){
@@ -144,11 +132,61 @@ class LogicalPartition {
                         if(mode == Mode.DUMP) println("ext4FileSize="+ext4FileSize)
                     }
 
-                    //output file here
+                    var save_path = ""
+                    //if(save_path.length == 0){
+                    val currentRelativePath = Paths.get("")
+                    save_path = currentRelativePath.toAbsolutePath().toString()
+                    //}
+                    val fb:ByteArray = ByteArray(512)
+                    if(mode == Mode.EXPAND) {
+                        var path: String
+                        path = Paths.get(save_path).resolve(nameAndType.first).toAbsolutePath()
+                            .toString()
 
+                        //output file here
+                        val f = prepareOutfile(path)
+                        val fw = FileOutputStream(f)
+                        fp.seek(extent.targetData.toInt() * 512L)
+                        var p = 0UL
+                        var progress = 0
+                        while (true) {
+                            if (fp.read(fb, 512) <= 0) {
+                                break
+                            }
+                            if (p < extent.numSectors * 512UL) {
+                                if (ext4FileSize >= 0UL) {
+                                    if (p >= ext4FileSize) break
+                                }
+                                fw.write(fb)
+                                fw.flush()
+                            } else {
+                                break
+                            }
+                            p += 512UL
+                            if ((p % 8388608UL) == 0UL) {
+                                progress += 1
+                                print(".")
+                                if (progress == 52) {
+                                    progress = 0
+                                    print("\n")
+                                }
+                            }
+                        }
+
+                        //truncate file via channel
+                        if (ext4FileSize >= 0UL) {
+                            //println("pos:"+p+","+ext4FileSize+","+extent.numSectors*512UL)
+                            if(ext4FileSize > p){
+
+                            }
+                            fw.getChannel().truncate(ext4FileSize.toLong());
+                        }
+                        fw.getChannel().force(true);
+                        fw.getChannel().lock();
+                        fw.close()
+                    }
+                    print("\n")
                 }
-
-                // Your loop body
             }
         }
     }

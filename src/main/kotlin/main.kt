@@ -290,7 +290,7 @@ fun main(args : Array<String>) {
     //We can dump it or expand it with this tool
     val lpp =LogicalPartition()
     if(lpp.isValid(rr)) {
-      lpp.parse(rr)
+      lpp.parse(rr,LogicalPartition.Mode.EXPAND)
     } else {
       println("The file format is not supported")
     }
