@@ -41,11 +41,11 @@ class Ext2FileSystem {
         fp.seek(this.sb_offset.toLong())
         superblk.parse(fp)
         determineFileSystemType()
-        //println(fp._off)
-        if(superblk.s_magic.toUInt() != 0xef53u) {
-            //throw RuntimeException("not an ext2 fs")
+
+        if(this.fileSystemType == ImageType.UNKNOWN) {
             return;
         }
+
         parseGroupDescs(fp)
         //println(fp._off)
         //Block Groups : contains inode

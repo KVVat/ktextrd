@@ -7,6 +7,7 @@ enum class ImageType {
     EXT2,
     EXT3,
     EXT4,
+    SUPER,
     SPARSE,
     UNKNOWN
 }

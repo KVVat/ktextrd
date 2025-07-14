@@ -95,11 +95,20 @@ Update offset bytes from a file head to the super block area. (Default = 1024 by
 ### **-R &lt;*inode number*&gt;**
 Override an inode number of the root directory of the image. (Default number = 2)
 
+## Command Line Options For SuperImage (Logical Partition)
+Basically the tool if for reading a ext2 or ext4 format image file.
+But also, it can read a logical partition image file like super.img  
+If the tool detects the file is a logical partition image file, 
+you can operate the file with the following options. The feature support to read sparse format file.
+### **-d**
+Dump elements(each images) in the image.
+### **-x &lt;outputpath&gt;**
+Expand all images in the file into output path
+
 ## to do
  - Restore timestamp and attributes of file when exports
  - Dump all files in image
  - Maven repository settings
  - Add useful tool for factory/ota image analysis
-   - super.img (sparse archive)
    - payload.bin support
  - Refactoring

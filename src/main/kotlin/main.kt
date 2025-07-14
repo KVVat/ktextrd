@@ -1,6 +1,7 @@
 import android.device_security.ext2rd.Constants
 import android.device_security.ext2rd.Ext2FileSystem
 import android.device_security.ext2rd.ImageType
+import android.device_security.ext2rd.ImageTypeChecker
 import android.device_security.ext2rd.action
 import android.device_security.ext2rd.dumpblocks
 import android.device_security.ext2rd.dumpfs
@@ -68,6 +69,8 @@ fun main(args : Array<String>) {
 
   var targetFile = ""
   var sb_offset: ULong = 0x400u
+  var lpartition_mode = LogicalPartition.Mode.TEST
+  var lpartition_path = ""
   var rootdir_in: Int = Constants.ROOTDIRINODE
   //arg parsing
   //for(var i: Int in 0 until args.size){
@@ -79,7 +82,16 @@ fun main(args : Array<String>) {
       when(arg[1]) {
         'l' -> actions.add(listfiles())
         'v' -> actions.add(verboselistfiles())
-        'd' -> actions.add(dumpfs())
+        'd' -> {
+          actions.add(dumpfs())
+          lpartition_mode = LogicalPartition.Mode.DUMP
+        }
+        'x' -> {
+          lpartition_mode = LogicalPartition.Mode.EXPAND
+          getstrarg(args, ++i).let {
+            lpartition_path = it
+          }
+        }
         'o' -> {
           //parameter for OffsetReader which read the specific sparse image
           offsets.add(getintarg(args,++i).toULong())
@@ -274,25 +286,23 @@ fun main(args : Array<String>) {
     rr = RandomAccessReader(r)
   }
 
-  ext2.sb_offset = sb_offset
-  ext2.rootdir_in = rootdir_in.toULong()
+  val lpp =LogicalPartition()
+
+  val type = ImageTypeChecker.parse(rr,sb_offset,lpp)
+  println("Image type: $type")
   //
-  ext2.parse(rr)
-  //
-  if(ext2.fileSystemType == ImageType.EXT2
-    || ext2.fileSystemType == ImageType.EXT3
-    || ext2.fileSystemType == ImageType.EXT4){
+  if(arrayOf(ImageType.EXT2,ImageType.EXT3,ImageType.EXT4).contains(type)){
+    ext2.sb_offset = sb_offset
+    ext2.rootdir_in = rootdir_in.toULong()
+    //
+    ext2.parse(rr)
     actions.forEach {
       it.perform(ext2)
     }
+  } else if(ImageType.SUPER == type){
+    lpp.parse(rr,lpartition_mode,lpartition_path)
   } else {
-    //Logical Partition used for super.img
-    //We can dump it or expand it with this tool
-    val lpp =LogicalPartition()
-    if(lpp.isValid(rr)) {
-      lpp.parse(rr,LogicalPartition.Mode.EXPAND)
-    } else {
-      println("The file format is not supported")
-    }
+    println("The file format is not supported")
   }
+
 }

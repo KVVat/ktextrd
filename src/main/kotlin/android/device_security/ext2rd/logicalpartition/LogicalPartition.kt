@@ -1,13 +1,10 @@
 package android.device_security.ext2rd.logicalpartition
 
-import android.device_security.ext2rd.exportinode
 import android.device_security.ext2rd.get64le
 import android.device_security.ext2rd.memcpy
 import android.device_security.ext2rd.prepareOutfile
 import android.device_security.ext2rd.reader.IReadWriter
-import android.device_security.ext2rd.toHex
 import java.io.FileOutputStream
-import java.nio.ByteBuffer
 import java.nio.file.Paths
 
 const val LP_PARTITION_RESERVED_BYTES = 4096L
@@ -71,7 +68,7 @@ class LogicalPartition {
 
         return Pair(fileName,format)
     }
-    fun parse(fp: IReadWriter,mode:Mode=Mode.TEST) {
+    fun parse(fp: IReadWriter,mode:Mode=Mode.TEST,_save_path:String="") {
         fp.seek(0)
         fp.seek(LP_PARTITION_RESERVED_BYTES)
         //geometry
@@ -123,7 +120,7 @@ class LogicalPartition {
                     fp.read(temp,TEMP_SIZE.toLong())
                     val nameAndType = testPartitionEntry(temp,partitionEntry.name)
                     //if(mode == Mode.DUMP)
-                    println("\nExisting Partition:"+nameAndType.first)
+                    println("[Existing Partition:"+nameAndType.first+"]")
                     var ext4FileSize = 0UL
 
                     if(nameAndType.second == PartitionFormat.EXT4){
@@ -132,11 +129,15 @@ class LogicalPartition {
                         if(mode == Mode.DUMP) println("ext4FileSize="+ext4FileSize)
                     }
 
-                    var save_path = ""
-                    //if(save_path.length == 0){
-                    val currentRelativePath = Paths.get("")
-                    save_path = currentRelativePath.toAbsolutePath().toString()
-                    //}
+                    var save_path = _save_path
+                    if(save_path.length == 0){
+                        val currentRelativePath = Paths.get("")
+                        save_path = currentRelativePath.toAbsolutePath().toString()
+                    } else {
+                        if(!save_path.endsWith("/")){
+                            save_path+="/"
+                        }
+                    }
                     val fb:ByteArray = ByteArray(512)
                     if(mode == Mode.EXPAND) {
                         var path: String
@@ -175,17 +176,17 @@ class LogicalPartition {
 
                         //truncate file via channel
                         if (ext4FileSize >= 0UL) {
-                            //println("pos:"+p+","+ext4FileSize+","+extent.numSectors*512UL)
-                            if(ext4FileSize > p){
-
+                            if(ext4FileSize >= p){
+                                //fill out by 0?
+                            } else {
+                                fw.getChannel().truncate(ext4FileSize.toLong());
                             }
-                            fw.getChannel().truncate(ext4FileSize.toLong());
                         }
                         fw.getChannel().force(true);
                         fw.getChannel().lock();
                         fw.close()
                     }
-                    print("\n")
+                    if(mode== Mode.EXPAND) print("\n")
                 }
             }
         }
