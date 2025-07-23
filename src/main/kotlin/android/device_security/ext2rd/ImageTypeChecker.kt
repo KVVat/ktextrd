@@ -7,9 +7,12 @@ import android.device_security.ext2rd.reader.SparseReader
 class ImageTypeChecker {
 
     companion object {
-        fun parse(fp: IReadWriter, sb_offset: ULong,lpp:LogicalPartition): ImageType {
+        @OptIn(ExperimentalStdlibApi::class)
+        fun parse(fp: IReadWriter, sb_offset: ULong, lpp:LogicalPartition): ImageType {
             fp.seek(sb_offset.toLong())
             val sb = SuperBlock()
+            sb.parse(fp)
+            //println(sb.s_magic.toUInt().toHexString(HexFormat.Default))
             if(sb.s_magic.toUInt() != 0xef53u) {
                 if(lpp.isValid(fp)){
                     return ImageType.SUPER

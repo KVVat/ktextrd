@@ -22,6 +22,7 @@ import android.device_security.debug.HexDump
 import org.apache.commons.io.FilenameUtils
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.channels.FileChannel
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -270,15 +271,34 @@ class exportinode(val nr:UInt,val _save_path:String): action {
             }
             val f = prepareOutfile(_save_path)
             val fw=FileOutputStream(f)
+            var totalBytesWritten = 0L
             i.enumblocks(fs.superblk){ block ->
+                totalBytesWritten+=block.size
+                //println(block.size)
                 fw.write(block)
-                fw.flush()
+                //fw.flush()
                 return@enumblocks true
             }
+            fw.flush()
+            //var fsize = i.i_size.toLong();
+            //println(">"+fsize+"/"+(fsize.toDouble()/1024.0/1024.0));
             //truncate file via channel
-            fw.getChannel().truncate(i.i_size.toLong());
-            fw.getChannel().force(true);
-            fw.getChannel().lock();
+            val finalSize = minOf(i.i_size.toLong(),totalBytesWritten)
+            if (i.i_size.toLong() > totalBytesWritten) {
+                println("warning: file size mismatch to inode size(${i.i_size}) and actual size($totalBytesWritten)")
+                //var diff = i.i_size.toLong() - totalBytesWritten
+                //println("diff:"+diff+">"+diff.toDouble()/4096)
+            }
+
+            if(finalSize >= 0){
+                fw.channel.truncate(finalSize);
+            }
+
+
+            fw.channel.force(true);
+            //chn.lock()
+            fw.channel.lock();
+            //chn.close()
             fw.close()
             //Files.setPosixPermission to set a file permission
 

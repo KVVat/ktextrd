@@ -302,7 +302,7 @@ fun main(args : Array<String>) {
   } else if(ImageType.SUPER == type){
     lpp.parse(rr,lpartition_mode,lpartition_path)
   } else {
-    println("The file format is not supported")
+    println("The file format is not supported:"+type)
   }
 
 }
