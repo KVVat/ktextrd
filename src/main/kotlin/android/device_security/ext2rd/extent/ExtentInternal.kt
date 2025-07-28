@@ -1,11 +1,12 @@
 @file:OptIn(ExperimentalUnsignedTypes::class)
 package android.device_security.ext2rd.extent
 
+import android.device_security.ext2rd.Inode
 import android.device_security.ext2rd.SuperBlock
 import android.device_security.ext2rd.get16le
 import android.device_security.ext2rd.get32le
 
-class ExtentInternal(buf:UByteArray,first:Int) : ExtentNode() {
+class ExtentInternal(buf:UByteArray,first:Int,inode: Inode) : ExtentNode(inode) {
 
     var ei_block: UInt=0u
     var ei_leaf_lo: UInt=0u
@@ -25,7 +26,7 @@ class ExtentInternal(buf:UByteArray,first:Int) : ExtentNode() {
     }
 
     override fun dump() {
-        println(String.format("blk:%08x, [%d] %d", ei_block.toInt(),
+        println(String.format("(Internal) blk:%08x, [%d] %d", ei_block.toInt(),
             ei_unused.toInt(), leafnode().toLong()));
     }
 
@@ -34,8 +35,8 @@ class ExtentInternal(buf:UByteArray,first:Int) : ExtentNode() {
         return (ei_leaf_hi.toULong() shl 32) or ei_leaf_lo.toULong()
     }
 
-    override fun enumblocks(super_: SuperBlock, cb: (ub: ByteArray) -> Boolean):Boolean {
-        val e = Extent();
+    override fun enumblocks(super_: SuperBlock, cb: (ub: ByteArray) -> Boolean):Int {
+        val e = Extent(inode = inode);
         val ub = super_.getblock(leafnode().toUInt()).toUByteArray()
         e.parse(ub,0);
         return e.enumblocks(super_, cb);

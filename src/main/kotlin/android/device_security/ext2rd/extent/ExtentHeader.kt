@@ -22,7 +22,7 @@ class ExtentHeader {
     }
     fun dump()
     {
-        println(String.format("M:%04x, N:%d,max:%d, d:%d, g:%d", eh_magic.toInt(),
+        println(String.format("EXTHEADER M:%04x, N:%d,max:%d, d:%d, g:%d", eh_magic.toInt(),
             eh_entries.toInt(), eh_max.toInt(), eh_depth.toInt(), eh_generation.toInt()))
     }
 }

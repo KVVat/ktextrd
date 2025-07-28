@@ -207,16 +207,65 @@ class findfiles(val searchstr:String): action {
     }
 }
 
+/*
+var totalBytesWritten = 0L
+i.enumblocks(fs.superblk){ block ->
+    totalBytesWritten+=block.size
+    fw.write(block)
+    //fw.flush()
+    return@enumblocks true
+}
+fw.flush()
+//var fsize = i.i_size.toLong();
+//println(">"+fsize+"/"+(fsize.toDouble()/1024.0/1024.0));
+//truncate file via channel
+val finalSize = minOf(i.i_size.toLong(),totalBytesWritten)
+if (i.i_size.toLong() > totalBytesWritten) {
+    println("warning: file size mismatch to inode size(${i.i_size}) and actual size($totalBytesWritten)")
+    //var diff = i.i_size.toLong() - totalBytesWritten
+    //println("diff:"+diff+">"+diff.toDouble()/4096)
+}
+*/
+
 class hexdumpinode(val nr:UInt): action {
     override fun perform(fs: Ext2FileSystem) {
         val i = fs.getinode(nr)
+        val size = i.i_size.toLong()
+
         if(!i._empty){
             var ofs=0;
             i.enumblocks(fs.superblk){
-                println(HexDump.hexdump(it,ofs))
+                print(HexDump.hexdump(it,ofs))
                 ofs += it.size
                 return@enumblocks true
             }
+            if(ofs.toLong() != size) {
+                println("irregular inode size: header size=>" + size + ",actual=>" + ofs)
+                i.dump()
+            }
+
+        }
+    }
+}
+
+class testinode(val nr:UInt): action {
+    override fun perform(fs: Ext2FileSystem) {
+        val i = fs.getinode(nr)
+        val size = i.i_size.toLong()
+
+        if(!i._empty){
+            var ofs=0;
+            i.enumblocks(fs.superblk){
+                //print(HexDump.hexdump(it,ofs))
+                print(" ofs="+ofs+" ");
+                ofs += it.size
+                return@enumblocks true
+            }
+            if(ofs.toLong() != size) {
+                println("irregular inode size: header size=>" + size + ",actual=>" + ofs)
+                i.dump()
+            }
+
         }
     }
 }
@@ -274,7 +323,6 @@ class exportinode(val nr:UInt,val _save_path:String): action {
             var totalBytesWritten = 0L
             i.enumblocks(fs.superblk){ block ->
                 totalBytesWritten+=block.size
-                //println(block.size)
                 fw.write(block)
                 //fw.flush()
                 return@enumblocks true
@@ -293,7 +341,6 @@ class exportinode(val nr:UInt,val _save_path:String): action {
             if(finalSize >= 0){
                 fw.channel.truncate(finalSize);
             }
-
 
             fw.channel.force(true);
             //chn.lock()
@@ -391,6 +438,21 @@ class hexdumpfile(val ext2path:String): action {
 class dumpfs: action {
     override fun perform(fs: Ext2FileSystem) {
        fs.dump()
+    }
+}
+
+class testfile(val ext2path:String): action {
+    override fun perform(fs: Ext2FileSystem) {
+        val path = if(ext2path[0] == File.separatorChar) ext2path.substring(1) else ext2path
+
+        val ino = searchpath(fs,fs.rootdir_in.toUInt(),path)
+        if(ino == 0u){
+            println("testfile: path not found")
+            return
+        }
+        println(String.format("testfile: found. inode no.%d",ino.toInt()))
+        val dump_action = testinode(ino)
+        dump_action.perform(fs)
     }
 }
 

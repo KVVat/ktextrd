@@ -372,6 +372,14 @@ class SuperBlock {
         print(String.format("s_algo_bitmap=0x%08x\n", s_algo_bitmap.toInt()))
     }
 
+    fun blankblock():ByteArray
+    {
+        val blocksize_:Long = blocksize().toLong();
+        val buf = ByteArray(blocksize_.toInt())
+
+        return buf;
+    }
+
     fun getblock(n:UInt):ByteArray
     {
         if (n>=s_blocks_count)

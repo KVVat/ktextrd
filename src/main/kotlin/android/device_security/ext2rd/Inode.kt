@@ -37,7 +37,7 @@ class Inode {
     var i_block: Array<UInt> = Array(15) { 0u } //  028
 
     var symlink: String = ""
-    var e: Extent = Extent() //  064
+    var e: Extent = Extent(this) //  064
 
     var i_generation: UInt = 0u //  064
     var i_file_acl: UInt = 0u //  068
@@ -71,7 +71,6 @@ class Inode {
             p+=60
         } else if(i_flags and Constants.EXT4_EXTENTS_FL >0u){
             e.parse(buf,p)
-
             p+=60
         } else {
             for(i in 0..<15){
@@ -100,8 +99,6 @@ class Inode {
             i_mode.toInt(),i_mode.toInt() ,i_links_count.toInt(), i_gid.toInt(), i_uid.toInt(), i_atime.toInt(), i_ctime.toInt(), i_mtime.toInt(), i_dtime.toInt(),
             datasize().toInt(), i_blocks.toLong(), i_flags.toInt(), fl2str(i_flags), i_file_acl.toInt(),
             i_osd2.toHex()))
-
-
 
         if (issymlink()) {
             print(String.format("symlink: %s\n",symlink))
@@ -160,7 +157,8 @@ class Inode {
         if(issymlink()){
             //noblocks
         } else if(i_flags and Constants.EXT4_EXTENTS_FL > 0u){
-            return enumextents(super_,cb)
+            //println("******ext4 extents flag is set******")
+            return enumextents(super_,cb)>0
         }
 
         var bytes:ULong=0u;
@@ -238,7 +236,7 @@ class Inode {
         }
         return true
     }
-    fun enumextents(super_: SuperBlock, cb:(ub:ByteArray)->Boolean):Boolean{
+    fun enumextents(super_: SuperBlock, cb:(ub:ByteArray)->Boolean):Int{
         return e.enumblocks(super_,cb)
     }
     fun modestr():String{
