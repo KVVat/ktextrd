@@ -7,6 +7,9 @@ build/
 *.iml
 
 testfiles/*.img
+testfiles/*.ext4
+testshell/*.img
+testshell/*.ext4
 local.properties
 
 # Compiled class file
@@ -23,3 +26,5 @@ local.properties
 *.zip
 *.tar.gz
 *.rar
+*.ext4
+/ktextrd/system.img
