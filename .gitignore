@@ -4,6 +4,8 @@
 # Ignore Gradle build output directory
 build/
 dist/system/
+ktextrd/output
+ktextrd/super
 output/
 
 *.iml

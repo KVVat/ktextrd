@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# unpacksuper.sh
 # Put  a super.img into the testfiles directory.
 # Then it will unpack it and then extract files in `super` directory
 

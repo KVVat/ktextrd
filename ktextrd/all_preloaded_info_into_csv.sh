@@ -119,11 +119,10 @@ find output -type f -name "*.apk" -print0 | while IFS= read -r -d $'\0' full_fil
    filename="${full_file_path##*/}"
    package_name=$(aapt2 dump packagename "$full_file_path")
    badging=$(aapt2 dump badging "$full_file_path" 2>/dev/null)
-
    if [[ "$full_file_path" == *priv-app* ]]; then
      app_label=$(echo "$badging" | extract_badging_info "application-label:" "FIELD:2:'")
      permissions=$(echo "$badging" | extract_all_matching_details "uses-permission: name=" "FIELD:2:'")
-     echo $badging
+     echo "$filename,$package_name,$app_label,\"$permissions\""
    fi
 done
 
