@@ -3,6 +3,8 @@
 .idea
 # Ignore Gradle build output directory
 build/
+dist/system/
+output/
 
 *.iml
 

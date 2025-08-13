@@ -105,9 +105,12 @@ Dump elements(each images) in the image.
 ### **-x &lt;outputpath&gt;**
 Expand all images in the file into output path
 
+### Shell files for the android system images
+There some tools for analysis the preloaded apk files in the system images.
+ - ktextrd/list_all_preloaded_in_images.sh
+ - ktextrd/all_preloaded_info_into_csv.sh
+
 ## to do
- - Restore timestamp and attributes of file when exports
- - Dump all files in image
  - Maven repository settings
  - Add useful tool for factory/ota image analysis
    - payload.bin support

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Unpack all apk files under /priv-app/ in a image into a `output` directory
+# Then check all apk files and output badging parameters into standard output as csv format.
+# It helps to survey the preloaded apps in a image.
+# The command take a image name as an argument
+
 exec 2>> packagecheck_errors.log
 
 # Function to display usage
@@ -46,7 +51,7 @@ extract_all_matching_details() {
       elif [[ "$type" == "REGEX" ]]; then
         current_result=$(echo "$input_line" | sed -n "s/.*${spec}.*/\1/p")
       else
-s        echo "Error: Invalid extract_spec type for line: $input_line" >&2
+        echo "Error: Invalid extract_spec type for line: $input_line" >&2
         continue
       fi
       if [ -n "$current_result" ]; then
@@ -100,17 +105,13 @@ fi
 echo "Checking prerequisites..."
 check_command "java" "Java is required, often for apksigner to function correctly."
 check_command "aapt2" "aapt2 is required to verify APK fiies. It's part of the Android SDK Build Tools."
-check_command "apksigner" "apksigner is required to verify APK signatures."
-check_command "apkanalyzer" "apkanalyzer is required to verify APK manifest."
 
 SYSTEM_IMAGE="$1"
-#IMAGE_WITHOUT_EXT=${SYSTEM_IMAGE%%.*}
-#echo IMAGE_WITHOUT_EXT : $IMAGE_WITHOUT_EXT
 DIRECTORY_NAME="output"
 [ -d "$DIRECTORY_NAME" ] || { echo "Creating directory '$DIRECTORY_NAME'..." && mkdir "$DIRECTORY_NAME"; }
 
 echo "Extracting APKs (assuming ktextrd.sh handles this and places them in $DIRECTORY_NAME)..."
-#./ktextrd.sh $SYSTEM_IMAGE -wx *.apk:$DIRECTORY_NAME &> /dev/null
+./ktextrd.sh $SYSTEM_IMAGE -wx *.apk:$DIRECTORY_NAME &> /dev/null
 #./ktextrd.sh $SYSTEM_IMAGE -wx *.apk:$DIRECTORY_NAME
 echo "apk_name,package_name,app_label,permissions"
 find output -type f -name "*.apk" -print0 | while IFS= read -r -d $'\0' full_file_path; do
@@ -122,11 +123,8 @@ find output -type f -name "*.apk" -print0 | while IFS= read -r -d $'\0' full_fil
    if [[ "$full_file_path" == *priv-app* ]]; then
      app_label=$(echo "$badging" | extract_badging_info "application-label:" "FIELD:2:'")
      permissions=$(echo "$badging" | extract_all_matching_details "uses-permission: name=" "FIELD:2:'")
-
-
-      echo $badging
+     echo $badging
    fi
-   #echo "$filename"
 done
 
 
